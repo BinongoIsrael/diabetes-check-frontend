@@ -47,20 +47,20 @@ export function Header() {
           {/* Menu Panel */}
           <nav className="fixed top-[73px] right-4 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-50 md:hidden overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="py-2">
-              <a
-                href="/"
+              <Link
+                to="/"
                 className="block px-6 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Home
-              </a>
-              <a
-                href="/about"
+              </Link>
+              <Link
+                to="/about"
                 className="block px-6 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
                 About
-              </a>
+              </Link>
             </div>
           </nav>
         </>
