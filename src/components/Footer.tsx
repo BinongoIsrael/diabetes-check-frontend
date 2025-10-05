@@ -12,7 +12,7 @@ const Footer = ({
 }: FooterProps) => {
   return (
     <footer className="border-t bg-card mt-12">
-      <div className="container mx-auto px-20 py-6">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-20 py-6">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
             © 2025 DiabetesCheck. All rights reserved.
