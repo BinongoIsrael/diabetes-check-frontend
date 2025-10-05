@@ -1,12 +1,15 @@
 // Header.tsx
-import { Activity } from "lucide-react";
+import { Activity, Menu } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useState } from "react";
 
 export function Header() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   return (
-    <header className="w-full border-b bg-card shadow-sm">
-      <div className="container px-20 py-4">
-        <div className="flex items-center justify-between">
+    <header className="w-full border-b bg-card shadow-sm relative">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-20 py-4">
+        <div className="flex items-center justify-between relative">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
               <Activity className="w-6 h-6 text-primary-foreground" />
@@ -30,8 +33,38 @@ export function Header() {
               About
             </Link>
           </nav>
+          <button 
+            className="md:hidden text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label="Toggle mobile menu"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
         </div>
       </div>
+      {isMenuOpen && (
+        <>  
+          {/* Menu Panel */}
+          <nav className="fixed top-[73px] right-4 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-50 md:hidden overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="py-2">
+              <a
+                href="/"
+                className="block px-6 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Home
+              </a>
+              <a
+                href="/about"
+                className="block px-6 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                About
+              </a>
+            </div>
+          </nav>
+        </>
+      )}
     </header>
   );
 }
