@@ -13,7 +13,13 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Activity, User, Heart, Scale, Loader2 } from "lucide-react";
 
-export function RiskAssessmentForm() {
+
+interface FormProps {
+  backendReady: boolean;
+  isWarmingUp?: boolean;
+}
+
+export function RiskAssessmentForm({ backendReady, isWarmingUp = false }: FormProps) {
   const [fbs, setFbs] = useState("");
   const [bmi, setBmi] = useState("");
   const [age, setAge] = useState("");
@@ -21,7 +27,7 @@ export function RiskAssessmentForm() {
   const [result, setResult] = useState<any>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [hasAssessed, setHasAssessed] = useState(false);
-  const [loading, setLoading] = useState(false); 
+  const [loading, setLoading] = useState(false);
 
   const ranges = {
     fbs: { min: 50, max: 220 },
@@ -61,13 +67,16 @@ export function RiskAssessmentForm() {
   const validateAll = () => {
     const fields = { fbs, bmi, age, physical };
     const newErrors: Record<string, string> = {};
+    
     Object.entries(fields).forEach(([key, value]) => {
-      if (!value) newErrors[key] = "This field is required.";
-      else {
+      if (!value) {
+        newErrors[key] = "This field is required.";
+      } else {
         const err = validateField(key, value);
         if (err) newErrors[key] = err;
       }
     });
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -77,17 +86,35 @@ export function RiskAssessmentForm() {
     if (!validateAll()) return;
 
     try {
-      setLoading(true); 
-      const res = await axios.post("https://diabetescheck-api.onrender.com/assess", {
-        fbs: parseFloat(fbs),
-        bmi: parseFloat(bmi),
-        age: parseFloat(age),
-        physical_activity: parseFloat(physical),
-      });
+      setLoading(true);
+
+      const res = await axios.post(
+        "https://diabetescheck-api.onrender.com/assess",
+        {
+          fbs: parseFloat(fbs),
+          bmi: parseFloat(bmi),
+          age: parseFloat(age),
+          physical_activity: parseFloat(physical),
+        },
+        { timeout: 60000 }
+      );
+      
       setResult(res.data);
       setHasAssessed(true);
     } catch (err) {
-      console.error(err);
+      console.error("Assessment error:", err);
+      
+      if (axios.isAxiosError(err)) {
+        if (err.code === 'ECONNABORTED') {
+          alert('Request timed out. The server may be starting up. Please try again in a moment.');
+        } else if (err.response) {
+          alert(`Error: ${err.response.status} - ${err.response.statusText}`);
+        } else if (err.request) {
+          alert('Unable to reach the server. Please check your internet connection and try again.');
+        } else {
+          alert('An unexpected error occurred. Please try again.');
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -103,130 +130,168 @@ export function RiskAssessmentForm() {
     setHasAssessed(false);
   };
 
+  const handleInputChange = (
+    field: string,
+    value: string,
+    setter: (value: string) => void
+  ) => {
+    setter(value);
+    validateField(field, value);
+  };
+
   return (
     <div className="w-full max-w-3xl space-y-8 relative">
       <Card className="w-full border-2 shadow-lg relative overflow-hidden">
-        {/* 🌀 Loading Overlay */}
+        {/* Loading Overlay */}
         {loading && (
-          <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 flex flex-col items-center justify-center z-20 rounded-lg backdrop-blur-sm">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            <p className="mt-3 text-sm text-muted-foreground">Assessing risk...</p>
+          <div className="absolute inset-0 bg-white/90 dark:bg-gray-900/90 flex flex-col items-center justify-center z-20 rounded-lg backdrop-blur-sm">
+            <Loader2 className="w-10 h-10 animate-spin text-primary" />
+            <p className="mt-4 text-base font-medium text-foreground">
+              {!backendReady 
+                ? "Waking up server and processing..." 
+                : "Calculating your diabetes risk..."}
+            </p>
+            {!backendReady && (
+              <p className="mt-2 text-sm text-muted-foreground max-w-sm text-center px-4">
+                First request may take 30-60 seconds as the server starts up
+              </p>
+            )}
           </div>
         )}
 
         <CardHeader className="space-y-2 text-center">
-          <CardTitle>Diabetes Risk Assessment</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-2xl">Diabetes Risk Assessment</CardTitle>
+          <CardDescription className="text-base">
             Enter your health metrics to assess your diabetes risk
           </CardDescription>
         </CardHeader>
 
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-8 p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Input: FBS */}
-              <div>
-                <label className="flex items-center gap-2 text-sm font-medium mb-1">
-                  <Heart className="h-4 w-4 text-primary" /> Fasting Blood Sugar (mg/dL)
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <Heart className="h-4 w-4 text-primary" /> 
+                  Fasting Blood Sugar (mg/dL)
                 </label>
                 <Input
                   type="number"
-                  className="h-9"
+                  step="0.01"
+                  className="h-10"
                   placeholder="e.g., 90"
                   value={fbs}
-                  onChange={(e) => {
-                    setFbs(e.target.value);
-                    validateField("fbs", e.target.value);
-                  }}
+                  onChange={(e) => handleInputChange("fbs", e.target.value, setFbs)}
                 />
-                {errors.fbs && <p className="text-red-500 text-sm mt-1">{errors.fbs}</p>}
-                <p className="text-xs text-muted-foreground mt-1">
+                {errors.fbs && (
+                  <p className="text-red-500 text-sm">{errors.fbs}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
                   Normal: 70–99 | Pre-diabetic: 100–125 | Diabetic: ≥126
                 </p>
               </div>
 
               {/* Input: BMI */}
-              <div>
-                <label className="flex items-center gap-2 text-sm font-medium mb-1">
-                  <Scale className="h-4 w-4 text-primary" /> Body Mass Index (BMI)
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <Scale className="h-4 w-4 text-primary" /> 
+                  Body Mass Index (BMI)
                 </label>
                 <Input
                   type="number"
-                  className="h-9"
+                  step="0.01"
+                  className="h-10"
                   placeholder="e.g., 23.5"
                   value={bmi}
-                  onChange={(e) => {
-                    setBmi(e.target.value);
-                    validateField("bmi", e.target.value);
-                  }}
+                  onChange={(e) => handleInputChange("bmi", e.target.value, setBmi)}
                 />
-                {errors.bmi && <p className="text-red-500 text-sm mt-1">{errors.bmi}</p>}
-                <p className="text-xs text-muted-foreground mt-1">
+                {errors.bmi && (
+                  <p className="text-red-500 text-sm">{errors.bmi}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
                   Normal: 18.5–24.9 | Overweight: 25–29.9 | Obese: ≥30
                 </p>
               </div>
 
               {/* Input: Age */}
-              <div>
-                <label className="flex items-center gap-2 text-sm font-medium mb-1">
-                  <User className="h-4 w-4 text-primary" /> Age (years)
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <User className="h-4 w-4 text-primary" /> 
+                  Age (years)
                 </label>
                 <Input
                   type="number"
-                  className="h-9"
+                  className="h-10"
                   placeholder="e.g., 35"
                   value={age}
-                  onChange={(e) => {
-                    setAge(e.target.value);
-                    validateField("age", e.target.value);
-                  }}
+                  onChange={(e) => handleInputChange("age", e.target.value, setAge)}
                 />
-                {errors.age && <p className="text-red-500 text-sm mt-1">{errors.age}</p>}
-                <p className="text-xs text-muted-foreground mt-1">
+                {errors.age && (
+                  <p className="text-red-500 text-sm">{errors.age}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
                   Young: 15–35 | Middle: 36–55 | Old: 56–75 | Very Old: 76–90
                 </p>
               </div>
 
               {/* Input: Physical Activity */}
-              <div>
-                <label className="flex items-center gap-2 text-sm font-medium mb-1">
-                  <Activity className="h-4 w-4 text-primary" /> Physical Activity (days/week)
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <Activity className="h-4 w-4 text-primary" /> 
+                  Physical Activity (days/week)
                 </label>
                 <Input
                   type="number"
-                  className="h-9"
+                  step="0.01"
+                  className="h-10"
                   placeholder="e.g., 3"
                   value={physical}
-                  onChange={(e) => {
-                    setPhysical(e.target.value);
-                    validateField("physical", e.target.value);
-                  }}
+                  onChange={(e) => handleInputChange("physical", e.target.value, setPhysical)}
                 />
                 {errors.physical && (
-                  <p className="text-red-500 text-sm mt-1">{errors.physical}</p>
+                  <p className="text-red-500 text-sm">{errors.physical}</p>
                 )}
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-xs text-muted-foreground">
                   Low: 0–2 | Moderate: 3–5 | High: 6–7
                 </p>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-4 justify-center">
-              <Button type="submit" className="px-6 py-2" disabled={loading}>
-                {loading ? "Processing..." : "Assess Risk"}
-              </Button>
-              {hasAssessed && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleReset}
-                  className="px-6 py-2"
-                  disabled={loading}
-                >
-                  Reset
-                </Button>
+            <div className="flex flex-col gap-4 justify-center pt-4">
+              {/* Warming up message */}
+              {isWarmingUp && (
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 text-center">
+                  <p className="text-sm text-yellow-800 dark:text-yellow-200 font-medium">
+                    🔄 Server is waking up... Please wait a moment before submitting.
+                  </p>
+                </div>
               )}
+              
+              <div className="flex gap-4 justify-center">
+                <Button 
+                  type="submit" 
+                  className="px-8 py-2.5 text-base font-medium" 
+                  disabled={loading || isWarmingUp}
+                >
+                  {isWarmingUp 
+                    ? "Waiting for server..." 
+                    : loading 
+                    ? "Processing..." 
+                    : "Assess Risk"}
+                </Button>
+                {hasAssessed && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleReset}
+                    className="px-8 py-2.5 text-base font-medium"
+                    disabled={loading || isWarmingUp}
+                  >
+                    Reset
+                  </Button>
+                )}
+              </div>
             </div>
           </form>
         </CardContent>
