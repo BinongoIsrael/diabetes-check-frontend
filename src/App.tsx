@@ -49,7 +49,7 @@ function App() {
     // Keep-alive ping every 4 minutes to prevent cold starts
     const keepAliveInterval = setInterval(async () => {
       try {
-        await axios.get(`${API_BASE_URL}/health`, { timeout: 5000 });
+        await axios.get(`${API_BASE_URL}/`, { timeout: 5000 });
         console.log('Keep-alive ping successful');
       } catch (err) {
         console.warn('Keep-alive ping failed:', err);
