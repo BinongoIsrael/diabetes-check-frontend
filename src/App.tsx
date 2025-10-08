@@ -10,6 +10,7 @@ import axios from "axios";
 import { CheckCircle2, XCircle, Loader2, X } from "lucide-react";
 
 const API_BASE_URL = "https://diabetescheck-api.onrender.com";
+
 function App() {
   const [isWarmingUp, setIsWarmingUp] = useState(true);
   const [backendReady, setBackendReady] = useState(false);
@@ -17,7 +18,6 @@ function App() {
   const [showReadyBanner, setShowReadyBanner] = useState(true);
 
   useEffect(() => {
-    // Wake up backend on initial load with retry logic
     const wakeUpBackend = async () => {
       const maxRetries = 3;
       let retryCount = 0;
@@ -35,13 +35,11 @@ function App() {
           console.warn(`Backend warmup attempt ${retryCount} failed:`, err);
           
           if (retryCount < maxRetries) {
-            // Wait 5 seconds before retry
             await new Promise(resolve => setTimeout(resolve, 5000));
           }
         }
       }
       
-      // After all retries failed
       console.warn('Backend warmup failed after retries');
       setBackendReady(false);
       setIsWarmingUp(false);
@@ -50,7 +48,6 @@ function App() {
 
     wakeUpBackend();
 
-    // Keep-alive ping every 4 minutes to prevent cold starts
     const keepAliveInterval = setInterval(async () => {
       try {
         await axios.get(`${API_BASE_URL}/`, { timeout: 5000 });
@@ -66,7 +63,7 @@ function App() {
           setBackendError(true);
         }
       }
-    }, 4 * 60 * 1000); // 4 minutes
+    }, 4 * 60 * 1000);
 
     return () => clearInterval(keepAliveInterval);
   }, [backendReady]);
@@ -74,10 +71,8 @@ function App() {
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       
-      {/* Header */}
       <Header />
 
-      {/* Backend Status Banner */}
       {isWarmingUp && (
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800 px-4 py-3">
           <div className="max-w-7xl mx-auto flex items-center justify-center gap-2">
@@ -118,15 +113,12 @@ function App() {
         </div>
       )}
 
-      {/* Main content area */}
       <main className="flex-1 px-4 space-y-8">
         <Routes>
-          {/* Home Route */}
           <Route
             path="/"
             element={
               <div className="flex flex-col items-center">
-                {/* Original Header Section */}
                 <div className="text-center space-y-4 py-8">
                   <h1 className="text-4xl md:text-5xl text-foreground">
                     Diabetes Risk Assessment Tool
@@ -137,14 +129,12 @@ function App() {
                   </p>
                 </div>
 
-                {/* Form Section */}
                 <RiskAssessmentForm 
                   backendReady={backendReady} 
                   isWarmingUp={isWarmingUp}
                   backendError={backendError}
                 />
 
-                {/* Disclaimer */}
                 <div className="max-w-4xl mx-auto mt-4">
                   <div className="bg-muted/50 rounded-lg p-6 border">
                     <h3 className="text-sm mb-2">Medical Disclaimer</h3>
@@ -162,15 +152,12 @@ function App() {
             }
           />
 
-          {/* About Route */}
           <Route path="/about" element={<About />} />
 
-          {/* Graphs Route */}
           <Route path="/graphs" element={<Graphs />} />
         </Routes>
       </main>
 
-      {/* Footer */}
       <Footer
         githubUrl="https://github.com/BinongoIsrael"
         email="israelmelorenbinongo@gmail.com"

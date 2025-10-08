@@ -1,16 +1,10 @@
 // src/components/Graphs.tsx
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Loader2 } from "lucide-react";
-
-const API_BASE_URL = "https://diabetescheck-api.onrender.com";
 
 export function Graphs() {
   const [selectedVariable, setSelectedVariable] = useState<string>("all");
-  const [loading, setLoading] = useState(false);
-  const [imageUrl, setImageUrl] = useState<string>("");
-  const [error, setError] = useState<string>("");
 
   const variables = [
     { id: "all", name: "All Variables", description: "View all membership functions" },
@@ -20,32 +14,6 @@ export function Graphs() {
     { id: "physical", name: "Physical Activity", description: "Physical activity membership functions" },
     { id: "risk", name: "Risk Output", description: "Risk level membership functions" },
   ];
-
-  const loadGraph = async (variableId: string) => {
-    setLoading(true);
-    setError("");
-    setSelectedVariable(variableId);
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/plot/${variableId}`);
-      if (!response.ok) throw new Error("Failed to load graph");
-
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-
-      if (imageUrl) URL.revokeObjectURL(imageUrl);
-
-      setImageUrl(url);
-    } catch (err) {
-      console.error("Error loading graph:", err);
-      setError("Failed to load graph. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-  useEffect(() => {
-    loadGraph("all");
-  }, []);
 
   return (
     <div className="max-w-7xl mx-auto py-8 space-y-8">
@@ -73,8 +41,7 @@ export function Graphs() {
                 key={variable.id}
                 variant={selectedVariable === variable.id ? "default" : "outline"}
                 className="h-auto py-4 px-6 flex flex-col items-start text-left"
-                onClick={() => loadGraph(variable.id)}
-                disabled={loading}
+                onClick={() => setSelectedVariable(variable.id)}
               >
                 <span className="font-semibold text-base">{variable.name}</span>
                 <span className="text-xs font-normal mt-1">
@@ -96,35 +63,13 @@ export function Graphs() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {loading && (
-            <div className="flex flex-col items-center justify-center py-20">
-              <Loader2 className="w-12 h-12 animate-spin text-primary" />
-              <p className="mt-4 text-muted-foreground">Loading graph...</p>
-            </div>
-          )}
-
-          {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
-              <p className="text-red-600 dark:text-red-400">{error}</p>
-              <Button
-                variant="outline"
-                className="mt-4"
-                onClick={() => loadGraph(selectedVariable)}
-              >
-                Retry
-              </Button>
-            </div>
-          )}
-
-          {!loading && !error && imageUrl && (
-            <div className="relative">
-              <img
-                src={imageUrl}
-                alt={`Membership functions for ${selectedVariable}`}
-                className="w-full h-auto rounded-lg border"
-              />
-            </div>
-          )}
+          <div className="relative">
+            <img
+              src={`/graphs/${selectedVariable}.png`}
+              alt={`Membership functions for ${selectedVariable}`}
+              className="w-full h-auto rounded-lg border"
+            />
+          </div>
         </CardContent>
       </Card>
 
