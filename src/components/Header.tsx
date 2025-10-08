@@ -26,6 +26,13 @@ export function Header() {
             >
               Home
             </Link>
+            <Link 
+            to="/graphs" 
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Graphs
+          </Link>
+
             <Link
               to="/about"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -54,6 +61,14 @@ export function Header() {
               >
                 Home
               </Link>
+              <Link 
+                to="/graphs" 
+                className="block px-6 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Graphs
+              </Link>
+
               <Link
                 to="/about"
                 className="block px-6 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"

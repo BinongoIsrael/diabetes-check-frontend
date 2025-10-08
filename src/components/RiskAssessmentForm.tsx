@@ -17,9 +17,10 @@ import { Activity, User, Heart, Scale, Loader2 } from "lucide-react";
 interface FormProps {
   backendReady: boolean;
   isWarmingUp?: boolean;
+  backendError?: boolean;
 }
 
-export function RiskAssessmentForm({ backendReady, isWarmingUp = false }: FormProps) {
+export function RiskAssessmentForm({ backendReady, isWarmingUp = false, backendError = false }: FormProps) {
   const [fbs, setFbs] = useState("");
   const [bmi, setBmi] = useState("");
   const [age, setAge] = useState("");
@@ -33,7 +34,7 @@ export function RiskAssessmentForm({ backendReady, isWarmingUp = false }: FormPr
     fbs: { min: 50, max: 220 },
     bmi: { min: 10, max: 55 },
     age: { min: 15, max: 90 },
-    physical: { min: 0, max: 7 },
+    physical: { min: 0, max: 300 },
   };
 
   const validateField = (name: string, value: string) => {
@@ -89,7 +90,7 @@ export function RiskAssessmentForm({ backendReady, isWarmingUp = false }: FormPr
       setLoading(true);
 
       const res = await axios.post(
-        "https://diabetescheck-api.onrender.com/assess",
+        "http://diabetescheck-api.onrender.com/assess",
         {
           fbs: parseFloat(fbs),
           bmi: parseFloat(bmi),
@@ -139,6 +140,8 @@ export function RiskAssessmentForm({ backendReady, isWarmingUp = false }: FormPr
     validateField(field, value);
   };
 
+  const isFormDisabled = !backendReady || isWarmingUp || backendError;
+
   return (
     <div className="w-full max-w-3xl space-y-8 relative">
       <Card className="w-full border-2 shadow-lg relative overflow-hidden">
@@ -147,15 +150,8 @@ export function RiskAssessmentForm({ backendReady, isWarmingUp = false }: FormPr
           <div className="absolute inset-0 bg-white/90 dark:bg-gray-900/90 flex flex-col items-center justify-center z-20 rounded-lg backdrop-blur-sm">
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
             <p className="mt-4 text-base font-medium text-foreground">
-              {!backendReady 
-                ? "Waking up server and processing..." 
-                : "Calculating your diabetes risk..."}
+              Calculating your diabetes risk...
             </p>
-            {!backendReady && (
-              <p className="mt-2 text-sm text-muted-foreground max-w-sm text-center px-4">
-                First request may take 30-60 seconds as the server starts up
-              </p>
-            )}
           </div>
         )}
 
@@ -182,6 +178,7 @@ export function RiskAssessmentForm({ backendReady, isWarmingUp = false }: FormPr
                   placeholder="e.g., 90"
                   value={fbs}
                   onChange={(e) => handleInputChange("fbs", e.target.value, setFbs)}
+                  disabled={isFormDisabled}
                 />
                 {errors.fbs && (
                   <p className="text-red-500 text-sm">{errors.fbs}</p>
@@ -204,6 +201,7 @@ export function RiskAssessmentForm({ backendReady, isWarmingUp = false }: FormPr
                   placeholder="e.g., 23.5"
                   value={bmi}
                   onChange={(e) => handleInputChange("bmi", e.target.value, setBmi)}
+                  disabled={isFormDisabled}
                 />
                 {errors.bmi && (
                   <p className="text-red-500 text-sm">{errors.bmi}</p>
@@ -225,6 +223,7 @@ export function RiskAssessmentForm({ backendReady, isWarmingUp = false }: FormPr
                   placeholder="e.g., 35"
                   value={age}
                   onChange={(e) => handleInputChange("age", e.target.value, setAge)}
+                  disabled={isFormDisabled}
                 />
                 {errors.age && (
                   <p className="text-red-500 text-sm">{errors.age}</p>
@@ -238,32 +237,41 @@ export function RiskAssessmentForm({ backendReady, isWarmingUp = false }: FormPr
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-medium">
                   <Activity className="h-4 w-4 text-primary" /> 
-                  Physical Activity (days/week)
+                  Physical Activity (mins/week)
                 </label>
                 <Input
                   type="number"
                   step="0.01"
                   className="h-10"
-                  placeholder="e.g., 3"
+                  placeholder="e.g., 60"
                   value={physical}
                   onChange={(e) => handleInputChange("physical", e.target.value, setPhysical)}
+                  disabled={isFormDisabled}
                 />
                 {errors.physical && (
                   <p className="text-red-500 text-sm">{errors.physical}</p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  Low: 0–2 | Moderate: 3–5 | High: 6–7
+                  Low: 0–75 | Moderate: 75–150 | High: 150–300
                 </p>
               </div>
             </div>
 
             {/* Action Buttons */}
             <div className="flex flex-col gap-4 justify-center pt-4">
-              {/* Warming up message */}
+              {/* Server status messages */}
               {isWarmingUp && (
                 <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 text-center">
                   <p className="text-sm text-yellow-800 dark:text-yellow-200 font-medium">
                     🔄 Server is waking up... Please wait a moment before submitting.
+                  </p>
+                </div>
+              )}
+
+              {backendError && !isWarmingUp && (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-center">
+                  <p className="text-sm text-red-800 dark:text-red-200 font-medium">
+                    ❌ Server connection failed. Please ensure the backend is running.
                   </p>
                 </div>
               )}
@@ -272,12 +280,14 @@ export function RiskAssessmentForm({ backendReady, isWarmingUp = false }: FormPr
                 <Button 
                   type="submit" 
                   className="px-8 py-2.5 text-base font-medium" 
-                  disabled={loading || isWarmingUp}
+                  disabled={loading || isFormDisabled}
                 >
                   {isWarmingUp 
                     ? "Waiting for server..." 
                     : loading 
                     ? "Processing..." 
+                    : backendError
+                    ? "Server Unavailable"
                     : "Assess Risk"}
                 </Button>
                 {hasAssessed && (
@@ -286,7 +296,7 @@ export function RiskAssessmentForm({ backendReady, isWarmingUp = false }: FormPr
                     variant="outline"
                     onClick={handleReset}
                     className="px-8 py-2.5 text-base font-medium"
-                    disabled={loading || isWarmingUp}
+                    disabled={loading}
                   >
                     Reset
                   </Button>

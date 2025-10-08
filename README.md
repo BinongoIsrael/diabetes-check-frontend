@@ -64,7 +64,7 @@ POST /assess
   "fbs": 100,
   "bmi": 25,
   "age": 45,
-  "physical_activity": 3
+  "physical_activity": 30
 }
 ````
 
@@ -76,6 +76,40 @@ POST /assess
   "classification": "Moderate"
 }
 ```
+---
+
+## 📊 Membership Function Graphs
+
+This API also includes endpoints to **visualize fuzzy membership functions** used in the risk assessment model.
+
+### 🖼️ Example Endpoints
+
+| Variable              | Endpoint         | Description                                        |
+| --------------------- | ---------------- | -------------------------------------------------- |
+| **All Variables**     | `/plot/all`      | Displays all membership functions in one figure    |
+| **FBS**               | `/plot/fbs`      | Fasting Blood Sugar membership sets                |
+| **BMI**               | `/plot/bmi`      | Body Mass Index membership sets                    |
+| **Age**               | `/plot/age`      | Age-based fuzzy categories                         |
+| **Physical Activity** | `/plot/physical` | Weekly physical activity intensity                 |
+| **Risk (Output)**     | `/plot/risk`     | Fuzzy risk output categories (Low, Moderate, High) |
+
+### 🧠 Example Usage
+
+Once your backend is running (e.g., `uvicorn main:app --reload`), open any of these in your browser:
+
+```
+http://localhost:8000/plot/all
+http://localhost:8000/plot/fbs
+http://localhost:8000/plot/bmi
+http://localhost:8000/plot/age
+http://localhost:8000/plot/physical
+http://localhost:8000/plot/risk
+```
+
+Each endpoint will render a **PNG image** generated dynamically using `matplotlib`, showing how fuzzy membership degrees change across value ranges.
+
+---
+
 
 
 ## 🛠️ Local Development Setup
