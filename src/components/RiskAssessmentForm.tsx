@@ -11,8 +11,8 @@ import {
 import { RiskResult } from "./RiskResult";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Activity, User, Heart, Scale, Loader2 } from "lucide-react";
-
+import { Activity, User, Heart, Scale, Loader2, AlertTriangle } from "lucide-react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/Alert";
 
 interface FormProps {
   backendReady: boolean;
@@ -29,6 +29,7 @@ export function RiskAssessmentForm({ backendReady, isWarmingUp = false, backendE
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [hasAssessed, setHasAssessed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const ranges = {
     fbs: { min: 50, max: 220 },
@@ -57,7 +58,7 @@ export function RiskAssessmentForm({ backendReady, isWarmingUp = false, backendE
         break;
       case "physical":
         if (isNaN(num) || num < ranges.physical.min || num > ranges.physical.max)
-          error = `Physical activity must be between ${ranges.physical.min} and ${ranges.physical.max} days/week.`;
+          error = `Physical activity must be between ${ranges.physical.min} and ${ranges.physical.max} mins/week.`;
         break;
     }
 
@@ -88,6 +89,7 @@ export function RiskAssessmentForm({ backendReady, isWarmingUp = false, backendE
 
     try {
       setLoading(true);
+      setError(null);
 
       const res = await axios.post(
         "https://diabetescheck-api.onrender.com/assess",
@@ -106,16 +108,19 @@ export function RiskAssessmentForm({ backendReady, isWarmingUp = false, backendE
       console.error("Assessment error:", err);
       
       if (axios.isAxiosError(err)) {
-        if (err.code === 'ECONNABORTED') {
-          alert('Request timed out. The server may be starting up. Please try again in a moment.');
+        if (err.code === "ECONNABORTED") {
+          setError("⏳ Request timed out. The server may be starting up. Please try again in a moment.");
         } else if (err.response) {
-          alert(`Error: ${err.response.status} - ${err.response.statusText}`);
+          setError(`❌ Error ${err.response.status}: ${err.response.statusText}`);
         } else if (err.request) {
-          alert('Unable to reach the server. Please check your internet connection and try again.');
+          setError("🌐 Unable to reach the server. Please check your internet connection and try again.");
         } else {
-          alert('An unexpected error occurred. Please try again.');
+          setError("⚠️ An unexpected error occurred. Please try again.");
         }
+      } else {
+        setError("⚠️ An unknown error occurred.");
       }
+
     } finally {
       setLoading(false);
     }
@@ -129,6 +134,7 @@ export function RiskAssessmentForm({ backendReady, isWarmingUp = false, backendE
     setResult(null);
     setErrors({});
     setHasAssessed(false);
+    setError(null);
   };
 
   const handleInputChange = (
@@ -163,9 +169,21 @@ export function RiskAssessmentForm({ backendReady, isWarmingUp = false, backendE
         </CardHeader>
 
         <CardContent>
+          {/* ✅ Custom Alert Component for Errors */}
+          {error && (
+            <Alert className="mb-6 border-red-500/40 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-200">
+              <AlertTriangle className="h-4 w-4 text-red-500" />
+              <div>
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </div>
+            </Alert>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-8 p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Input: FBS */}
+              {/* Input Fields */}
+              {/* FBS */}
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-medium">
                   <Heart className="h-4 w-4 text-primary" /> 
@@ -180,15 +198,13 @@ export function RiskAssessmentForm({ backendReady, isWarmingUp = false, backendE
                   onChange={(e) => handleInputChange("fbs", e.target.value, setFbs)}
                   disabled={isFormDisabled}
                 />
-                {errors.fbs && (
-                  <p className="text-red-500 text-sm">{errors.fbs}</p>
-                )}
+                {errors.fbs && <p className="text-red-500 text-sm">{errors.fbs}</p>}
                 <p className="text-xs text-muted-foreground">
                   Normal: 70–99 | Pre-diabetic: 100–125 | Diabetic: ≥126
                 </p>
               </div>
 
-              {/* Input: BMI */}
+              {/* BMI */}
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-medium">
                   <Scale className="h-4 w-4 text-primary" /> 
@@ -203,15 +219,13 @@ export function RiskAssessmentForm({ backendReady, isWarmingUp = false, backendE
                   onChange={(e) => handleInputChange("bmi", e.target.value, setBmi)}
                   disabled={isFormDisabled}
                 />
-                {errors.bmi && (
-                  <p className="text-red-500 text-sm">{errors.bmi}</p>
-                )}
+                {errors.bmi && <p className="text-red-500 text-sm">{errors.bmi}</p>}
                 <p className="text-xs text-muted-foreground">
                   Normal: 18.5–24.9 | Overweight: 25–29.9 | Obese: ≥30
                 </p>
               </div>
 
-              {/* Input: Age */}
+              {/* Age */}
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-medium">
                   <User className="h-4 w-4 text-primary" /> 
@@ -225,15 +239,13 @@ export function RiskAssessmentForm({ backendReady, isWarmingUp = false, backendE
                   onChange={(e) => handleInputChange("age", e.target.value, setAge)}
                   disabled={isFormDisabled}
                 />
-                {errors.age && (
-                  <p className="text-red-500 text-sm">{errors.age}</p>
-                )}
+                {errors.age && <p className="text-red-500 text-sm">{errors.age}</p>}
                 <p className="text-xs text-muted-foreground">
                   Young: 15–35 | Middle: 36–55 | Old: 56–75 | Very Old: 76–90
                 </p>
               </div>
 
-              {/* Input: Physical Activity */}
+              {/* Physical Activity */}
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-medium">
                   <Activity className="h-4 w-4 text-primary" /> 
@@ -248,18 +260,15 @@ export function RiskAssessmentForm({ backendReady, isWarmingUp = false, backendE
                   onChange={(e) => handleInputChange("physical", e.target.value, setPhysical)}
                   disabled={isFormDisabled}
                 />
-                {errors.physical && (
-                  <p className="text-red-500 text-sm">{errors.physical}</p>
-                )}
+                {errors.physical && <p className="text-red-500 text-sm">{errors.physical}</p>}
                 <p className="text-xs text-muted-foreground">
                   Low: 0–75 | Moderate: 75–150 | High: 150–300
                 </p>
               </div>
             </div>
 
-            {/* Action Buttons */}
+            {/* Buttons */}
             <div className="flex flex-col gap-4 justify-center pt-4">
-              {/* Server status messages */}
               {isWarmingUp && (
                 <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 text-center">
                   <p className="text-sm text-yellow-800 dark:text-yellow-200 font-medium">
