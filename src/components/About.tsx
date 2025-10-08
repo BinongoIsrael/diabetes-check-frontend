@@ -37,7 +37,7 @@ export function About() {
                 <li><strong>Fasting Blood Sugar (FBS):</strong> Measured in mg/dL. Ranges: Normal (70-99), Pre-diabetic (100-125), Diabetic (≥126).</li>
                 <li><strong>Body Mass Index (BMI):</strong> Calculated as weight (kg) / height² (m). Ranges: Normal (18.5-24.9), Overweight (25-29.9), Obese (≥30).</li>
                 <li><strong>Age:</strong> In years. Categories: Young (15-35), Middle (36-55), Old (56-75), Very Old (76-90).</li>
-                <li><strong>Physical Activity:</strong> Days per week. Categories: Low (0-2), Moderate (3-5), High (6-7).</li>
+                <li><strong>Physical Activity:</strong> Mins per week. Categories: Low (0-75), Moderate (75-150), High (150-300).</li>
               </ul>
             </section>
 
