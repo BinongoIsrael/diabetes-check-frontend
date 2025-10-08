@@ -90,7 +90,7 @@ export function RiskAssessmentForm({ backendReady, isWarmingUp = false, backendE
       setLoading(true);
 
       const res = await axios.post(
-        "http://diabetescheck-api.onrender.com/assess",
+        "https://diabetescheck-api.onrender.com/assess",
         {
           fbs: parseFloat(fbs),
           bmi: parseFloat(bmi),
