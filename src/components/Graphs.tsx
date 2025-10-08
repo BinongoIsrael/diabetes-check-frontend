@@ -4,8 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/Button";
 import { Loader2 } from "lucide-react";
 
-// const API_BASE_URL = "https://diabetescheck-api.onrender.com";
-const API_BASE_URL = "http://localhost:8000"; 
+const API_BASE_URL = "https://diabetescheck-api.onrender.com";
 
 export function Graphs() {
   const [selectedVariable, setSelectedVariable] = useState<string>("all");
